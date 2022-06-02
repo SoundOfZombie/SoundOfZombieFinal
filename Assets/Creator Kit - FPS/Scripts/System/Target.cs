@@ -10,7 +10,7 @@ public class Target : MonoBehaviour
     public int pointValue;
     public float speed; //움직일때 기본 속도 
     public float returnspeeds;
-    
+    private Animator anim;
     public ParticleSystem DestroyedEffect;
 
     [Header("Audio")]
@@ -29,6 +29,7 @@ public class Target : MonoBehaviour
 
     void Start()
     {
+        
         returnspeeds = speed;
 
         if(DestroyedEffect)
@@ -37,12 +38,22 @@ public class Target : MonoBehaviour
         m_CurrentHealth = health;
         if(IdleSource != null)
             IdleSource.time = Random.Range(0.0f, IdleSource.clip.length);
+
+     
+
+
     }
     void Update()
     {
 
         transform.position += new Vector3(speed * Time.deltaTime, 0, 0);
+        //피아노 좀비의 경우 움직이면 에니메이션을 바꿔줌 
+        if (speed>0 && transform.GetChild(0).gameObject.name == "piano_zombies")
+        {
+            anim = transform.GetChild(0).gameObject.GetComponent<Animator>();
 
+            anim.SetBool("isWalking", true);
+        }
 
     }
 
