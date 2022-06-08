@@ -11,7 +11,7 @@ using UnityEditor;
 public class Weapon : MonoBehaviour
 {
     static RaycastHit[] s_HitInfoBuffer = new RaycastHit[8];
-    
+
     public enum TriggerType
     {
         Auto,
@@ -52,10 +52,10 @@ public class Weapon : MonoBehaviour
     public Projectile projectilePrefab;
     public float projectileLaunchForce = 200.0f;
 
-    public Transform EndPoint; 
+    public Transform EndPoint;
 
     public AdvancedSettings advancedSettings;
-    
+
     [Header("Animation Clips")]
     public AnimationClip FireAnimationClip;
     public AnimationClip ReloadAnimationClip;
@@ -63,19 +63,19 @@ public class Weapon : MonoBehaviour
     [Header("Audio Clips")]
     public AudioClip FireAudioClip;
     public AudioClip ReloadAudioClip;
-    
+
     [Header("Visual Settings")]
     public LineRenderer PrefabRayTrail;
     public bool DisabledOnEmpty;
-    
+
     [Header("Visual Display")]
     public AmmoDisplay AmmoDisplay;
 
     public bool triggerDown
     {
         get { return m_TriggerDown; }
-        set 
-        { 
+        set
+        {
             m_TriggerDown = value;
             if (!m_TriggerDown) m_ShotDone = false;
         }
@@ -86,7 +86,7 @@ public class Weapon : MonoBehaviour
     public Controller Owner => m_Owner;
 
     Controller m_Owner;
-    
+
     Animator m_Animator;
     WeaponState m_CurrentState;
     bool m_ShotDone;
@@ -104,13 +104,13 @@ public class Weapon : MonoBehaviour
         public Vector3 direction;
         public float remainingTime;
     }
-    
+
     List<ActiveTrail> m_ActiveTrails = new List<ActiveTrail>();
-    
+
     Queue<Projectile> m_ProjectilePool = new Queue<Projectile>();
-    
+
     int fireNameHash = Animator.StringToHash("fire");
-    int reloadNameHash = Animator.StringToHash("reload");     
+    int reloadNameHash = Animator.StringToHash("reload");
 
     void Awake()
     {
@@ -146,53 +146,53 @@ public class Weapon : MonoBehaviour
     public void PutAway()
     {
         m_Animator.WriteDefaultValues();
-        
+
         for (int i = 0; i < m_ActiveTrails.Count; ++i)
         {
             var activeTrail = m_ActiveTrails[i];
             m_ActiveTrails[i].renderer.gameObject.SetActive(false);
         }
-        
+
         m_ActiveTrails.Clear();
     }
 
     public void Selected()
     {
         var ammoRemaining = m_Owner.GetAmmo(ammoType);
-        
-        if(DisabledOnEmpty)
+
+        if (DisabledOnEmpty)
             gameObject.SetActive(ammoRemaining != 0 || m_ClipContent != 0);
-        
-        if(FireAnimationClip != null)
-            m_Animator.SetFloat("fireSpeed",  FireAnimationClip.length / fireRate);
-        
-        if(ReloadAnimationClip != null)
+
+        if (FireAnimationClip != null)
+            m_Animator.SetFloat("fireSpeed", FireAnimationClip.length / fireRate);
+
+        if (ReloadAnimationClip != null)
             m_Animator.SetFloat("reloadSpeed", ReloadAnimationClip.length / reloadTime);
-        
+
         m_CurrentState = WeaponState.Idle;
 
         triggerDown = false;
         m_ShotDone = false;
-        
+
         WeaponInfoUI.Instance.UpdateWeaponName(this);
         WeaponInfoUI.Instance.UpdateClipInfo(this);
         WeaponInfoUI.Instance.UpdateAmmoAmount(m_Owner.GetAmmo(ammoType));
-        
-        if(AmmoDisplay)
+
+        if (AmmoDisplay)
             AmmoDisplay.UpdateAmount(m_ClipContent, clipSize);
 
         if (m_ClipContent == 0 && ammoRemaining != 0)
-        { 
+        {
             //this can only happen if the weapon ammo reserve was empty and we picked some since then. So directly
             //reload the clip when wepaon is selected          
             int chargeInClip = Mathf.Min(ammoRemaining, clipSize);
-            m_ClipContent += chargeInClip;        
-            if(AmmoDisplay)
-                AmmoDisplay.UpdateAmount(m_ClipContent, clipSize);        
-            m_Owner.ChangeAmmo(ammoType, -chargeInClip);       
+            m_ClipContent += chargeInClip;
+            if (AmmoDisplay)
+                AmmoDisplay.UpdateAmount(m_ClipContent, clipSize);
+            m_Owner.ChangeAmmo(ammoType, -chargeInClip);
             WeaponInfoUI.Instance.UpdateClipInfo(this);
         }
-        
+
         m_Animator.SetTrigger("selected");
     }
 
@@ -200,24 +200,24 @@ public class Weapon : MonoBehaviour
     {
         if (m_CurrentState != WeaponState.Idle || m_ShotTimer > 0 || m_ClipContent == 0)
             return;
-        
+
         m_ClipContent -= 1;
-        
+
         m_ShotTimer = fireRate;
 
-        if(AmmoDisplay)
+        if (AmmoDisplay)
             AmmoDisplay.UpdateAmount(m_ClipContent, clipSize);
-        
+
         WeaponInfoUI.Instance.UpdateClipInfo(this);
 
         //the state will only change next frame, so we set it right now.
         m_CurrentState = WeaponState.Firing;
-        
+
         m_Animator.SetTrigger("fire");
 
         m_Source.pitch = Random.Range(0.7f, 1.0f);
         m_Source.PlayOneShot(FireAudioClip);
-        
+
         CameraShaker.Instance.Shake(0.2f, 0.05f * advancedSettings.screenShakeMultiplier);
 
         if (weaponType == WeaponType.Raycast)
@@ -241,11 +241,11 @@ public class Weapon : MonoBehaviour
         float spreadRatio = advancedSettings.spreadAngle / Controller.Instance.MainCamera.fieldOfView;
 
         Vector2 spread = spreadRatio * Random.insideUnitCircle;
-        
+
         RaycastHit hit;
         Ray r = Controller.Instance.MainCamera.ViewportPointToRay(Vector3.one * 0.5f + (Vector3)spread);
         Vector3 hitPosition = r.origin + r.direction * 200.0f;
-        
+
         if (Physics.Raycast(r, out hit, 1000.0f, ~(1 << 9), QueryTriggerInteraction.Ignore))
         {
             Renderer renderer = hit.collider.GetComponentInChildren<Renderer>();
@@ -254,26 +254,36 @@ public class Weapon : MonoBehaviour
             //if too close, the trail effect would look weird if it arced to hit the wall, so only correct it if far
             if (hit.distance > 5.0f)
                 hitPosition = hit.point;
-            
+
             //this is a target
             if (hit.collider.gameObject.layer == 10)
             {
                 Target target = hit.collider.gameObject.GetComponent<Target>();
                 target.Got(damage);
+                UnityEngine.AI.NavMeshAgent nav = target.GetComponent<UnityEngine.AI.NavMeshAgent>();
+
 
                 //target이 움직일때만 적용해주기  
-                if (target.speed != 0)
+                //if (target.navMeshAgent.speed != 0)
+                //  {
+
+
+                if (gameObject.tag == "stop")
                 {
-                    if (gameObject.tag == "stop")
-                    {
-                        target.speed = 0;
-                    }
-                    else if (gameObject.tag == "slow")
-                    {
-                        target.speed = 1.0f;
-                    }
+
+                    target.StopGetHited = true;
+                    target.ChangeSpeed();
+
                 }
-               
+                else if (gameObject.tag == "slow")
+                {
+
+                    target.SlowGetHited = true;
+                    target.ChangeSpeed();
+
+                }
+                // }
+
 
 
             }
@@ -306,7 +316,7 @@ public class Weapon : MonoBehaviour
             dir.Normalize();
 
             var p = m_ProjectilePool.Dequeue();
-            
+
             p.gameObject.SetActive(true);
             p.Launch(this, dir, projectileLaunchForce);
         }
@@ -328,7 +338,7 @@ public class Weapon : MonoBehaviour
         if (remainingBullet == 0)
         {
             //No more bullet, so we disable the gun so it's displayed on empty (useful e.g. for  grenade)
-            if(DisabledOnEmpty)
+            if (DisabledOnEmpty)
                 gameObject.SetActive(false);
             return;
         }
@@ -341,26 +351,26 @@ public class Weapon : MonoBehaviour
         }
 
         int chargeInClip = Mathf.Min(remainingBullet, clipSize - m_ClipContent);
-     
+
         //the state will only change next frame, so we set it right now.
         m_CurrentState = WeaponState.Reloading;
-        
+
         m_ClipContent += chargeInClip;
-        
-        if(AmmoDisplay)
+
+        if (AmmoDisplay)
             AmmoDisplay.UpdateAmount(m_ClipContent, clipSize);
-        
+
         m_Animator.SetTrigger("reload");
-        
+
         m_Owner.ChangeAmmo(ammoType, -chargeInClip);
-        
+
         WeaponInfoUI.Instance.UpdateClipInfo(this);
     }
 
     void Update()
     {
-        UpdateControllerState();        
-        
+        UpdateControllerState();
+
         if (m_ShotTimer > 0)
             m_ShotTimer -= Time.deltaTime;
 
@@ -368,15 +378,15 @@ public class Weapon : MonoBehaviour
         for (int i = 0; i < m_ActiveTrails.Count; ++i)
         {
             var activeTrail = m_ActiveTrails[i];
-            
+
             activeTrail.renderer.GetPositions(pos);
             activeTrail.remainingTime -= Time.deltaTime;
 
             pos[0] += activeTrail.direction * 50.0f * Time.deltaTime;
             pos[1] += activeTrail.direction * 50.0f * Time.deltaTime;
-            
+
             m_ActiveTrails[i].renderer.SetPositions(pos);
-            
+
             if (m_ActiveTrails[i].remainingTime <= 0.0f)
             {
                 m_ActiveTrails[i].renderer.gameObject.SetActive(false);
@@ -390,7 +400,7 @@ public class Weapon : MonoBehaviour
     {
         m_Animator.SetFloat("speed", m_Owner.Speed);
         m_Animator.SetBool("grounded", m_Owner.Grounded);
-        
+
         var info = m_Animator.GetCurrentAnimatorStateInfo(0);
 
         WeaponState newState;
@@ -405,10 +415,10 @@ public class Weapon : MonoBehaviour
         {
             var oldState = m_CurrentState;
             m_CurrentState = newState;
-            
+
             if (oldState == WeaponState.Firing)
             {//we just finished firing, so check if we need to auto reload
-                if(m_ClipContent == 0)
+                if (m_ClipContent == 0)
                     Reload();
             }
         }
@@ -427,7 +437,7 @@ public class Weapon : MonoBehaviour
                 Fire();
         }
     }
-    
+
     /// <summary>
     /// This will compute the corrected position of the muzzle flash in world space. Since the weapon camera use a
     /// different FOV than the main camera, using the muzzle spot to spawn thing rendered by the main camera will appear
@@ -448,7 +458,7 @@ public class Weapon : MonoBehaviour
 
 public class AmmoTypeAttribute : PropertyAttribute
 {
-    
+
 }
 
 public abstract class AmmoDisplay : MonoBehaviour

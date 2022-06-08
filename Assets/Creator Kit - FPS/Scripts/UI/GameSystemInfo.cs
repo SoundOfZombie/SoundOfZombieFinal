@@ -2,9 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
+public static class SceneVariable
+{
+    public static string time = "";
+    public static int music = 0;
+}
 
 public class GameSystemInfo : MonoBehaviour
 {
+   
     public static GameSystemInfo Instance { get; private set; }
     
     public Text TimerText;
@@ -17,9 +25,10 @@ public class GameSystemInfo : MonoBehaviour
         Instance = this;
     }
 
-    public void UpdateTimer(float time)
+    public void UpdateTimer(string time)
     {
-        TimerText.text = time.ToString("N1");
+        TimerText.text = time;
+        SceneVariable.time = time;
     }
 
     public void UpdateScore(int score)
@@ -32,11 +41,22 @@ public class GameSystemInfo : MonoBehaviour
         //정수로 변경 후 +1을 한 값을 다시 UI에 적용한다.
         int life = int.Parse(LifeText.text) + count;
         LifeText.text = life.ToString();
+        if(life <= 0)
+        {
+            SceneManager.LoadScene("GameOver");
+        }
     }
     public void UpdateMusicBox(int count)
     {
+        
         int musicbox = int.Parse(PointText.text)+count;
+        SceneVariable.music = musicbox;
         PointText.text = musicbox.ToString();
+
+        if(musicbox == 16)
+        {
+                SceneManager.LoadScene("GameClear");
+        }
 
     }
 }

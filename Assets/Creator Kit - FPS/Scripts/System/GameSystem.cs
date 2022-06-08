@@ -77,7 +77,7 @@ public class GameSystem : MonoBehaviour
         }
 #endif
         
-        GameSystemInfo.Instance.UpdateTimer(0);
+        GameSystemInfo.Instance.UpdateTimer("0");
     }
 
     public void ResetTimer()
@@ -172,14 +172,38 @@ public class GameSystem : MonoBehaviour
         GameSystemInfo.Instance.UpdateScore(0);
         LevelSelectionUI.Instance.Init();
     }
-
+    string minutesS = "";
+    string secondsS = "";
     void Update()
     {
         if (m_TimerRunning)
         {
-            m_Timer += Time.deltaTime;
             
-            GameSystemInfo.Instance.UpdateTimer(m_Timer);
+            m_Timer += Time.deltaTime;
+            float minutes = Mathf.Floor(m_Timer / 60);
+            float seconds = Mathf.RoundToInt(m_Timer % 60);
+            
+            if (minutes < 10)
+            {
+               minutesS = "0" + minutes.ToString();
+            }
+            else {
+                minutesS =  minutes.ToString();
+            }
+            if (seconds < 10)
+            {
+                 secondsS = "0" + Mathf.RoundToInt(seconds).ToString();
+            }
+            else {
+                secondsS =  Mathf.RoundToInt(seconds).ToString();
+            }
+
+            GameSystemInfo.Instance.UpdateTimer(string.Format("{0}:{1}",minutesS ,secondsS));
+
+            if (minutes >= 10)
+            {
+                SceneManager.LoadScene("GameOver");
+            }
         }
 
         Transform playerTransform = Controller.Instance.transform;
