@@ -1,6 +1,7 @@
 ### 사운드오브좀비
 ![](https://velog.velcdn.com/images/yeah7598/post/646f7dc9-d763-4fb9-8363-e658d4de5d0b/image.png)
 영상 url: https://drive.google.com/file/d/1uUk8_8IDOjjwsoqgcCVG69VpgsS1w9L_/view
+
 알집 url: https://drive.google.com/file/d/18uf7c7O25iwtxDDu_EeidU1S8V-IPVf-/view?usp=sharing
 
 
